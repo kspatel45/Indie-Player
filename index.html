@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indie Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4169e1;
+            --primary-hover: #3151b5;
+            --bg-dark: #0a0e12;
+            --panel: #161b22;
+            --navy: #000080;
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: #f0f6fc;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
+        .glass-player {
+            background: rgba(22, 27, 34, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .track-card:hover {
+            background: rgba(65, 105, 225, 0.05);
+        }
+        .active-track {
+            background: rgba(65, 105, 225, 0.1) !important;
+            border-left: 4px solid var(--primary);
+        }
+        .progress-bar {
+            appearance: none;
+            height: 4px;
+            background: #30363d;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        .progress-bar::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+        
+        @keyframes rotate-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .chakra-container:hover .chakra-svg {
+            animation: rotate-slow 10s linear infinite;
+        }
+        
+        .playing-bar {
+            width: 3px;
+            background: var(--primary);
+            animation: music-bar 1s ease-in-out infinite;
+        }
+        @keyframes music-bar {
+            0%, 100% { height: 4px; }
+            50% { height: 16px; }
+        }
+
+        .tab-active {
+            color: white;
+            border-bottom: 2px solid var(--primary);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- Header -->
+    <header class="p-4 border-b border-slate-800 bg-[#0d1117]/80 sticky top-0 z-[60]">
+        <div class="max-w-6xl mx-auto flex flex-col gap-4">
+            <div class="flex items-center justify-between gap-4">
+                <!-- Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="chakra-container relative w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.2)] border-2 border-slate-800 transition-transform duration-500">
+                        <svg viewBox="0 0 100 100" class="chakra-svg w-8 h-8 fill-[var(--navy)]">
+                            <circle cx="50" cy="50" r="38" fill="none" stroke="var(--navy)" stroke-width="2.5"/>
+                            <circle cx="50" cy="50" r="7" fill="var(--navy)"/>
+                            <g>
+                                <path d="M50 12 L50 43 M50 57 L50 88 M12 50 L43 50 M57 50 L88 50" stroke="var(--navy)" stroke-width="1.5"/>
+                                <g transform="rotate(45 50 50)"><path d="M50 12 L50 43 M50 57 L50 88 M12 50 L43 50 M57 50 L88 50" stroke="var(--navy)" stroke-width="1.5"/></g>
+                                <g transform="rotate(15 50 50)"><path d="M50 12 L50 43 M50 57 L50 88 M12 50 L43 50 M57 50 L88 50" stroke="var(--navy)" stroke-width="1.5"/></g>
+                                <g transform="rotate(30 50 50)"><path d="M50 12 L50 43 M50 57 L50 88 M12 50 L43 50 M57 50 L88 50" stroke="var(--navy)" stroke-width="1.5"/></g>
+                                <g transform="rotate(60 50 50)"><path d="M50 12 L50 43 M50 57 L50 88 M12 50 L43 50 M57 50 L88 50" stroke="var(--navy)" stroke-width="1.5"/></g>
+                                <g transform="rotate(75 50 50)"><path d="M50 12 L50 43 M50 57 L50 88 M12 50 L43 50 M57 50 L88 50" stroke="var(--navy)" stroke-width="1.5"/></g>
+                            </g>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-black tracking-tighter">Indie<span class="text-[#4169e1]">Player</span></h1>
+                </div>
+                
+                <!-- Search -->
+                <div class="flex-grow max-w-md relative hidden sm:block">
+                    <input type="text" id="searchInput" placeholder="Search Indie, Bollywood, Hits..." 
+                        class="w-full bg-[#161b22] border border-slate-700 rounded-full py-2 px-4 pl-10 focus:outline-none focus:border-[#4169e1] transition-all text-sm">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                </div>
+
+                <!-- Sleep Timer -->
+                <div class="flex items-center gap-2 bg-[#161b22] px-3 py-1.5 rounded-full border border-slate-700">
+                    <i class="fas fa-moon text-xs text-slate-400"></i>
+                    <input type="number" id="sleepMinutes" placeholder="Min" class="w-10 bg-transparent text-xs focus:outline-none text-center" min="1">
+                    <button onclick="setSleepTimer()" id="sleepBtn" class="text-[10px] font-bold uppercase tracking-wider text-[#4169e1] hover:text-white transition-colors">Set</button>
+                    <div id="sleepDisplay" class="hidden text-[10px] text-slate-400 font-mono"></div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex gap-8 text-sm font-bold text-slate-500 border-t border-slate-800/50 pt-2">
+                <button onclick="switchTab('all')" id="tab-all" class="pb-2 tab-active transition-all">All Songs</button>
+                <button onclick="switchTab('fav')" id="tab-fav" class="pb-2 transition-all flex items-center gap-2">
+                    <i class="fas fa-heart text-xs"></i> Favorites
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content Area -->
+    <main class="flex-grow overflow-y-auto custom-scrollbar p-4 pb-48">
+        <div id="resultsGrid" class="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <!-- Dynamic Content -->
+        </div>
+    </main>
+
+    <!-- Player Bar -->
+    <footer class="fixed bottom-0 left-0 right-0 glass-player z-50">
+        <div class="w-full flex items-center gap-0 px-1 -mt-1">
+            <span id="currentTime" class="text-[9px] px-2 text-slate-500">0:00</span>
+            <input type="range" id="progressBar" value="0" step="0.1" class="progress-bar flex-grow" oninput="isSeeking = true" onchange="seekAudio()">
+            <span id="durationTime" class="text-[9px] px-2 text-slate-500">0:00</span>
+        </div>
+
+        <div class="max-w-6xl mx-auto p-4 pt-2">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 w-1/4 min-w-[150px]">
+                    <img id="playerCover" src="https://via.placeholder.com/150" class="w-12 h-12 rounded-lg object-cover shadow-lg border border-slate-700">
+                    <div class="overflow-hidden">
+                        <p id="playerTitle" class="text-sm font-bold truncate">Nothing playing</p>
+                        <p id="playerArtist" class="text-xs text-slate-400 truncate">Select a track</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center gap-1">
+                    <div class="flex items-center gap-6">
+                        <button onclick="changeTrack(-1)" class="text-slate-400 hover:text-white transition-colors">
+                            <i class="fas fa-step-backward text-lg"></i>
+                        </button>
+                        <button id="masterPlayBtn" onclick="togglePlay()" class="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-xl">
+                            <i class="fas fa-play ml-0.5 text-lg"></i>
+                        </button>
+                        <button onclick="changeTrack(1)" class="text-slate-400 hover:text-white transition-colors">
+                            <i class="fas fa-step-forward text-lg"></i>
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mt-2">Created by Kartik Patel</p>
+                </div>
+
+                <div class="flex items-center justify-end gap-5 w-1/4">
+                    <div class="hidden md:flex items-center gap-2">
+                        <i class="fas fa-volume-up text-slate-500 text-xs"></i>
+                        <input type="range" min="0" max="1" step="0.01" value="0.8" oninput="audio.volume = this.value" class="w-20 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <button onclick="downloadCurrent()" id="dlBtn" class="text-slate-400 hover:text-[#4169e1] disabled:opacity-30 p-2" disabled>
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <audio id="mainAudio" crossorigin="anonymous"></audio>
+
+    <script>
+        const API_ENDPOINTS = ["https://saavn.sumit.co/api", "https://saavn.dev/api", "https://saavn.me/api"];
+        const PROXY_URL = "https://api.allorigins.win/get?url=";
+        
+        let currentApiIndex = 0;
+        const audio = document.getElementById('mainAudio');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const searchInput = document.getElementById('searchInput');
+        
+        let allSongs = [];
+        let favorites = JSON.parse(localStorage.getItem('indie_favs') || '[]');
+        let currentView = 'all'; // 'all' or 'fav'
+        let playlist = []; // Active list being played from
+        let currentIndex = -1;
+        let isSeeking = false;
+        let sleepTimerId = null;
+        let sleepRemaining = 0;
+
+        window.onload = () => fetchSongs(`search/songs?query=latest&limit=25`);
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && searchInput.value.trim()) {
+                switchTab('all');
+                fetchSongs(`search/songs?query=${encodeURIComponent(searchInput.value)}&limit=30`);
+            }
+        });
+
+        async function fetchSongs(endpoint) {
+            let success = false;
+            resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500"><i class="fas fa-circle-notch fa-spin text-3xl mb-4 text-[#4169e1]"></i><p>Scanning indie frequencies...</p></div>`;
+
+            for (let i = 0; i < API_ENDPOINTS.length; i++) {
+                const url = `${API_ENDPOINTS[currentApiIndex]}/${endpoint}`;
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (handleApiResponse(result)) { success = true; break; }
+                    }
+                } catch (err) {
+                    try {
+                        const pResponse = await fetch(`${PROXY_URL}${encodeURIComponent(url)}`);
+                        const pData = await pResponse.json();
+                        if (handleApiResponse(JSON.parse(pData.contents))) { success = true; break; }
+                    } catch (e) {}
+                }
+                currentApiIndex = (currentApiIndex + 1) % API_ENDPOINTS.length;
+            }
+            if (!success) resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400"><p>Servers are reaching capacity. Try again in a moment.</p></div>`;
+        }
+
+        function handleApiResponse(result) {
+            const data = result.data?.results || result.data || [];
+            if (data.length > 0) { 
+                allSongs = data; 
+                if (currentView === 'all') playlist = allSongs;
+                renderView(); 
+                return true; 
+            }
+            return false;
+        }
+
+        function switchTab(view) {
+            currentView = view;
+            document.getElementById('tab-all').classList.toggle('tab-active', view === 'all');
+            document.getElementById('tab-fav').classList.toggle('tab-active', view === 'fav');
+            
+            if (view === 'all') {
+                playlist = allSongs;
+            } else {
+                playlist = favorites;
+            }
+            renderView();
+        }
+
+        function toggleFavorite(e, index) {
+            e.stopPropagation();
+            const song = playlist[index];
+            const favIndex = favorites.findIndex(f => f.id === song.id);
+            
+            if (favIndex > -1) {
+                favorites.splice(favIndex, 1);
+            } else {
+                favorites.unshift(song);
+            }
+            
+            localStorage.setItem('indie_favs', JSON.stringify(favorites));
+            
+            if (currentView === 'fav') {
+                playlist = favorites;
+            }
+            renderView();
+        }
+
+        function renderView() {
+            if (playlist.length === 0) {
+                resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500"><i class="fas ${currentView === 'fav' ? 'fa-heart-broken' : 'fa-music'} text-3xl mb-4 opacity-20"></i><p>${currentView === 'fav' ? 'No favorites added yet' : 'No songs found'}</p></div>`;
+                return;
+            }
+
+            resultsGrid.innerHTML = playlist.map((song, index) => {
+                const img = song.image?.[song.image.length - 1]?.url || song.image?.[song.image.length - 1]?.link || 'https://via.placeholder.com/150';
+                const artists = Array.isArray(song.artists?.primary) ? song.artists.primary.map(a => a.name).join(', ') : (song.subtitle || "Indie Artist");
+                const isFav = favorites.some(f => f.id === song.id);
+
+                return `
+                <div onclick="playSong(${index})" class="track-card p-4 rounded-2xl bg-[#161b22]/40 border border-slate-800/50 flex flex-col gap-3 cursor-pointer transition-all group ${currentIndex === index ? 'active-track' : ''}">
+                    <div class="relative aspect-square overflow-hidden rounded-xl">
+                        <img src="${img}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy">
+                        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                             ${currentIndex === index && !audio.paused ? '<div class="flex gap-1 items-end h-4"><div class="playing-bar" style="animation-delay:0s"></div><div class="playing-bar" style="animation-delay:0.2s"></div><div class="playing-bar" style="animation-delay:0.4s"></div></div>' : '<i class="fas fa-play text-white text-2xl"></i>'}
+                        </div>
+                        <button onclick="toggleFavorite(event, ${index})" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center transition-all hover:scale-110">
+                            <i class="${isFav ? 'fas text-red-500' : 'far text-white'} fa-heart"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-hidden">
+                        <h3 class="text-sm font-bold truncate group-hover:text-[#4169e1] transition-colors">${song.name || song.title}</h3>
+                        <p class="text-xs text-slate-500 truncate">${artists}</p>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function playSong(index) {
+            if (index < 0 || index >= playlist.length) return;
+            const song = playlist[index];
+            if (currentIndex !== index || audio.src === "") {
+                currentIndex = index;
+                const urls = song.downloadUrl || song.download_url || [];
+                const streamUrl = urls[urls.length - 1]?.url || urls[urls.length - 1]?.link || urls[0]?.url;
+                if (!streamUrl) return;
+
+                audio.src = streamUrl;
+                document.getElementById('playerTitle').textContent = song.name || song.title;
+                document.getElementById('playerArtist').textContent = Array.isArray(song.artists?.primary) ? song.artists.primary.map(a => a.name).join(', ') : "Indie Artist";
+                document.getElementById('playerCover').src = song.image[song.image.length - 1]?.url || song.image[0]?.url;
+                document.getElementById('dlBtn').disabled = false;
+                renderView();
+                audio.play();
+            } else { togglePlay(); }
+        }
+
+        function togglePlay() { if (currentIndex !== -1) audio.paused ? audio.play() : audio.pause(); }
+        function changeTrack(dir) { let next = currentIndex + dir; if (next >= 0 && next < playlist.length) playSong(next); }
+        function downloadCurrent() { if (currentIndex !== -1) window.open((playlist[currentIndex].downloadUrl || playlist[currentIndex].download_url).slice(-1)[0].url, '_blank'); }
+
+        function setSleepTimer() {
+            const input = document.getElementById('sleepMinutes');
+            const display = document.getElementById('sleepDisplay');
+            const btn = document.getElementById('sleepBtn');
+            if (sleepTimerId) {
+                clearInterval(sleepTimerId); sleepTimerId = null;
+                display.classList.add('hidden'); input.classList.remove('hidden');
+                btn.textContent = "Set"; return;
+            }
+            const mins = parseInt(input.value);
+            if (isNaN(mins) || mins <= 0) return;
+            sleepRemaining = mins * 60;
+            input.classList.add('hidden'); display.classList.remove('hidden');
+            btn.textContent = "Stop";
+            updateSleepDisplay();
+            sleepTimerId = setInterval(() => {
+                sleepRemaining--;
+                if (sleepRemaining <= 0) { audio.pause(); setSleepTimer(); }
+                else updateSleepDisplay();
+            }, 1000);
+        }
+
+        function updateSleepDisplay() {
+            const m = Math.floor(sleepRemaining / 60);
+            const s = sleepRemaining % 60;
+            document.getElementById('sleepDisplay').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        audio.onplay = () => { document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-pause text-lg"></i>`; renderView(); }
+        audio.onpause = () => { document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-play ml-0.5 text-lg"></i>`; renderView(); }
+        audio.onended = () => changeTrack(1);
+        audio.ontimeupdate = () => {
+            if (isSeeking) return;
+            document.getElementById('progressBar').value = (audio.currentTime / audio.duration) * 100 || 0;
+            document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
+            document.getElementById('durationTime').textContent = formatTime(audio.duration || 0);
+        };
+
+        function seekAudio() { isSeeking = false; if (audio.duration) audio.currentTime = (document.getElementById('progressBar').value / 100) * audio.duration; }
+        function formatTime(s) { if (!s || isNaN(s)) return "0:00"; const m = Math.floor(s / 60); return `${m}:${Math.floor(s % 60).toString().padStart(2, '0')}`; }
+    </script>
+</body>
+</html>
