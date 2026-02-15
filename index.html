@@ -77,6 +77,7 @@
         }
         .search-container:focus-within { border-color: var(--primary); }
     </style>
+    <link rel="manifest" href="./manifest.json">
 </head>
 <body class="flex flex-col h-screen">
 
@@ -270,7 +271,17 @@
             fIdx > -1 ? favorites.splice(fIdx, 1) : favorites.unshift(song);
             localStorage.setItem('indie_favs', JSON.stringify(favorites));
             renderView();
-        }
+            }
+
+        // Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(reg => console.log('Service Worker Registered'))
+            .catch(err => console.log('Service Worker Failed', err));
+    });
+}
     </script>
 </body>
 </html>
+
