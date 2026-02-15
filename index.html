@@ -228,29 +228,83 @@
             if (e.key === 'Enter') triggerSearch();
         });
 
-        async function fetchSongs(endpoint) {
-            let success = false;
-            resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500"><i class="fas fa-circle-notch fa-spin text-3xl mb-4 text-[#4169e1]"></i><p>Scanning indie frequencies...</p></div>`;
+        // --- Updated Core Functions ---
 
-            for (let i = 0; i < API_ENDPOINTS.length; i++) {
-                const url = `${API_ENDPOINTS[currentApiIndex]}/${endpoint}`;
-                try {
-                    const response = await fetch(url);
-                    if (response.ok) {
-                        const result = await response.json();
-                        if (handleApiResponse(result)) { success = true; break; }
-                    }
-                } catch (err) {
-                    try {
-                        const pResponse = await fetch(`${PROXY_URL}${encodeURIComponent(url)}`);
-                        const pData = await pResponse.json();
-                        if (handleApiResponse(JSON.parse(pData.contents))) { success = true; break; }
-                    } catch (e) {}
-                }
-                currentApiIndex = (currentApiIndex + 1) % API_ENDPOINTS.length;
+// 1. Improved API Fetching with better fallback logic
+async function fetchSongs(endpoint) {
+    resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500"><i class="fas fa-circle-notch fa-spin text-3xl mb-4 text-[#4169e1]"></i><p>Scanning indie frequencies...</p></div>`;
+
+    for (let attempt = 0; attempt < API_ENDPOINTS.length; attempt++) {
+        const baseUrl = API_ENDPOINTS[currentApiIndex];
+        const url = `${baseUrl}/${endpoint}`;
+        
+        try {
+            const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+            if (response.ok) {
+                const result = await response.json();
+                if (handleApiResponse(result)) return; // Success!
             }
-            if (!success) resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400"><p>Servers are reaching capacity. Try again in a moment.</p></div>`;
+        } catch (err) {
+            console.warn(`Endpoint ${baseUrl} failed, trying next...`);
         }
+        
+        // Move to next API for the next attempt
+        currentApiIndex = (currentApiIndex + 1) % API_ENDPOINTS.length;
+    }
+
+    resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400"><p>All frequencies are busy. Please try again in a few seconds.</p></div>`;
+}
+
+// 2. Media Session API for Lock Screen Controls
+function updateMediaSession(song) {
+    if ('mediaSession' in navigator) {
+        const artists = Array.isArray(song.artists?.primary) 
+            ? song.artists.primary.map(a => a.name).join(', ') 
+            : (song.subtitle || "Indie Artist");
+            
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: song.name || song.title,
+            artist: artists,
+            album: 'Indie Player',
+            artwork: [
+                { src: song.image[song.image.length - 1]?.url || song.image[0]?.url, sizes: '512x512', type: 'image/jpg' }
+            ]
+        });
+
+        // Set action handlers for background control
+        navigator.mediaSession.setActionHandler('play', () => audio.play());
+        navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+        navigator.mediaSession.setActionHandler('previoustrack', () => changeTrack(-1));
+        navigator.mediaSession.setActionHandler('nexttrack', () => changeTrack(1));
+    }
+}
+
+// 3. Updated playSong to trigger Media Session
+function playSong(index) {
+    if (index < 0 || index >= playlist.length) return;
+    const song = playlist[index];
+    
+    if (currentIndex !== index || audio.src === "") {
+        currentIndex = index;
+        const urls = song.downloadUrl || song.download_url || [];
+        const streamUrl = urls[urls.length - 1]?.url || urls[urls.length - 1]?.link || urls[0]?.url;
+        
+        if (!streamUrl) return;
+
+        audio.src = streamUrl;
+        document.getElementById('playerTitle').textContent = song.name || song.title;
+        document.getElementById('playerArtist').textContent = Array.isArray(song.artists?.primary) ? song.artists.primary.map(a => a.name).join(', ') : "Indie Artist";
+        document.getElementById('playerCover').src = song.image[song.image.length - 1]?.url || song.image[0]?.url;
+        document.getElementById('dlBtn').disabled = false;
+        
+        renderView();
+        updateMediaSession(song); // <-- Activate lock screen controls
+        
+        audio.play().catch(e => console.error("Playback failed:", e));
+    } else { 
+        togglePlay(); 
+    }
+}
 
         function handleApiResponse(result) {
             const data = result.data?.results || result.data || [];
