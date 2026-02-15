@@ -1,0 +1,19 @@
+{
+  "name": "Indie Player",
+  "short_name": "Indie",
+  "description": "Premium Indie Music Player",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0e12",
+  "theme_color": "#4169e1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://s3.amazonaws.com/gonativeio/app_files/lpzokez/app_icon_ios.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "entertainment"]
+}
