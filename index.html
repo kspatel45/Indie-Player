@@ -8,89 +8,124 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root { --primary: #4169e1; --bg-dark: #0a0e12; }
-        body { background-color: var(--bg-dark); color: #f0f6fc; font-family: sans-serif; overflow: hidden; }
-        .glass-player { background: rgba(22, 27, 34, 0.98); border-top: 1px solid rgba(255,255,255,0.1); }
-        .track-card { background: #161b22; transition: 0.2s; }
+        body { background-color: var(--bg-dark); color: #f0f6fc; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        .glass-player { background: rgba(22, 27, 34, 0.98); border-top: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
+        .track-card { background: #161b22; transition: 0.2s; border: 1px solid rgba(255,255,255,0.05); }
         .active-track { border: 2px solid var(--primary); background: rgba(65, 105, 225, 0.1); }
-        .progress-bar { appearance: none; height: 4px; background: #30363d; width: 100%; border-radius: 2px; }
-        .progress-bar::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; }
+        .progress-bar { appearance: none; height: 4px; background: #30363d; width: 100%; border-radius: 2px; outline: none; }
+        .progress-bar::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; cursor: pointer; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #30363d; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
     </style>
 </head>
 <body class="flex flex-col h-screen">
 
     <header class="p-4 border-b border-slate-800 bg-[#0d1117]">
         <div class="flex flex-col gap-3 max-w-6xl mx-auto">
-            <h1 class="text-xl font-bold">Indie<span class="text-[#4169e1]">Player</span></h1>
+            <div class="flex items-center justify-between">
+                <h1 class="text-xl font-bold tracking-tight">Indie<span class="text-[#4169e1]">Player</span></h1>
+                <div id="connectionStatus" class="text-[10px] uppercase tracking-widest text-green-500 font-bold">● Online</div>
+            </div>
             <div class="flex gap-2">
-                <input type="text" id="searchInput" placeholder="Search songs..." class="flex-grow bg-[#161b22] border border-slate-700 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-[#4169e1]">
-                <button onclick="triggerSearch()" class="bg-[#4169e1] px-6 py-2 rounded-full text-sm font-bold">Search</button>
+                <input type="text" id="searchInput" placeholder="Search Artists, Songs, Albums..." class="flex-grow bg-[#161b22] border border-slate-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-[#4169e1]">
+                <button onclick="triggerSearch()" class="bg-[#4169e1] hover:bg-blue-700 px-6 py-2.5 rounded-full text-sm font-bold transition-colors">Search</button>
             </div>
         </div>
     </header>
 
-    <main class="flex-grow overflow-y-auto custom-scrollbar p-4 pb-40">
-        <div id="resultsGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+    <main class="flex-grow overflow-y-auto custom-scrollbar p-4 pb-44">
+        <div id="resultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
+            </div>
     </main>
 
-    <footer class="fixed bottom-0 left-0 right-0 glass-player pb-6">
-        <input type="range" id="progressBar" value="0" step="0.1" class="progress-bar" oninput="isSeeking=true" onchange="seekAudio()">
-        <div class="flex items-center justify-between p-4 max-w-6xl mx-auto">
+    <footer class="fixed bottom-0 left-0 right-0 glass-player z-50">
+        <div class="w-full flex items-center px-1">
+            <input type="range" id="progressBar" value="0" step="0.1" class="progress-bar" oninput="isSeeking=true" onchange="seekAudio()">
+        </div>
+        <div class="flex items-center justify-between p-4 max-w-6xl mx-auto gap-4">
             <div class="flex items-center gap-3 w-1/3 overflow-hidden">
-                <img id="playerCover" src="" class="w-12 h-12 rounded shadow-lg object-cover bg-slate-800">
+                <img id="playerCover" src="https://via.placeholder.com/150" class="w-12 h-12 rounded shadow-lg object-cover bg-slate-800 border border-slate-700">
                 <div class="truncate">
-                    <p id="playerTitle" class="text-sm font-bold truncate">Not Playing</p>
-                    <p id="playerArtist" class="text-xs text-slate-400 truncate">Select a track</p>
+                    <p id="playerTitle" class="text-sm font-bold truncate">Nothing Playing</p>
+                    <p id="playerArtist" class="text-xs text-slate-400 truncate">Select a song</p>
                 </div>
             </div>
-            <div class="flex items-center gap-6">
-                <button onclick="changeTrack(-1)"><i class="fas fa-step-backward text-xl"></i></button>
-                <button id="masterPlayBtn" onclick="togglePlay()" class="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center"><i class="fas fa-play ml-1"></i></button>
-                <button onclick="changeTrack(1)"><i class="fas fa-step-forward text-xl"></i></button>
+            
+            <div class="flex flex-col items-center gap-1">
+                <div class="flex items-center gap-6">
+                    <button onclick="changeTrack(-1)" class="text-slate-400 hover:text-white"><i class="fas fa-step-backward text-lg"></i></button>
+                    <button id="masterPlayBtn" onclick="togglePlay()" class="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform"><i class="fas fa-play ml-1 text-lg"></i></button>
+                    <button onclick="changeTrack(1)" class="text-slate-400 hover:text-white"><i class="fas fa-step-forward text-lg"></i></button>
+                </div>
             </div>
-            <div class="w-1/3 text-right">
-                <span id="currentTime" class="text-xs font-mono">0:00</span>
+
+            <div class="w-1/3 text-right hidden sm:block">
+                <span id="currentTime" class="text-xs font-mono text-slate-400">0:00</span>
+                <span class="text-xs text-slate-600"> / </span>
+                <span id="durationTime" class="text-xs font-mono text-slate-400">0:00</span>
             </div>
         </div>
     </footer>
 
-    <audio id="mainAudio" crossorigin="anonymous"></audio>
+    <audio id="mainAudio" crossorigin="anonymous" playsinline></audio>
 
     <script>
-        const API_ENDPOINTS = ["https://saavn.dev/api", "https://saavn.me/api"];
+        const API_ENDPOINTS = ["https://saavn.dev/api", "https://saavn.me/api", "https://saavn.sumit.co/api"];
         let currentApiIndex = 0;
         const audio = document.getElementById('mainAudio');
+        const resultsGrid = document.getElementById('resultsGrid');
         let playlist = [], currentIndex = -1, isSeeking = false;
 
-        window.onload = () => { triggerSearch("latest"); setupMediaSession(); };
+        // Auto-load trending on start
+        window.onload = () => { 
+            triggerSearch("trending"); 
+            setupMediaSession();
+        };
 
         async function triggerSearch(query = document.getElementById('searchInput').value) {
             if (!query) return;
-            resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500">Searching...</div>`;
+            resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500"><i class="fas fa-spinner fa-spin mr-2"></i> Tuning frequencies...</div>`;
             
             for (let i = 0; i < API_ENDPOINTS.length; i++) {
                 try {
-                    const res = await fetch(`${API_ENDPOINTS[currentApiIndex]}/search/songs?query=${query}&limit=20`);
-                    const data = await res.json();
-                    if (data.data.results) {
-                        playlist = data.data.results;
+                    const baseUrl = API_ENDPOINTS[currentApiIndex];
+                    const res = await fetch(`${baseUrl}/search/songs?query=${encodeURIComponent(query)}&limit=25`, { signal: AbortSignal.timeout(5000) });
+                    const result = await res.json();
+                    
+                    // Handle different API response structures
+                    const songs = result.data?.results || result.data || [];
+                    
+                    if (songs.length > 0) {
+                        playlist = songs;
                         renderView();
+                        document.getElementById('connectionStatus').textContent = "● Online";
+                        document.getElementById('connectionStatus').className = "text-[10px] uppercase tracking-widest text-green-500 font-bold";
                         return;
                     }
                 } catch (e) {
+                    console.warn("API Node Failed, switching...");
                     currentApiIndex = (currentApiIndex + 1) % API_ENDPOINTS.length;
                 }
             }
+            resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-red-400">All servers busy. Try a different search.</div>`;
         }
 
         function renderView() {
-            resultsGrid.innerHTML = playlist.map((s, i) => `
-                <div onclick="playSong(${i})" class="track-card p-3 rounded-xl cursor-pointer ${currentIndex === i ? 'active-track' : ''}">
-                    <img src="${s.image[2].url}" class="w-full aspect-square object-cover rounded-lg mb-2">
-                    <p class="text-xs font-bold truncate">${s.name}</p>
+            resultsGrid.innerHTML = playlist.map((s, i) => {
+                const title = s.name || s.title;
+                const artist = s.artists?.primary?.[0]?.name || s.subtitle || "Indie Artist";
+                const img = s.image?.[s.image.length - 1]?.url || s.image?.[0]?.url || 'https://via.placeholder.com/150';
+                
+                return `
+                <div onclick="playSong(${i})" class="track-card p-3 rounded-2xl cursor-pointer hover:bg-slate-800/50 ${currentIndex === i ? 'active-track' : ''}">
+                    <div class="relative aspect-square mb-3">
+                        <img src="${img}" class="w-full h-full object-cover rounded-xl shadow-md" loading="lazy">
+                        ${currentIndex === i ? '<div class="absolute inset-0 bg-blue-600/20 flex items-center justify-center rounded-xl"><i class="fas fa-volume-up text-white"></i></div>' : ''}
+                    </div>
+                    <p class="text-[13px] font-bold truncate mb-0.5">${title}</p>
+                    <p class="text-[11px] text-slate-500 truncate">${artist}</p>
                 </div>
-            `).join('');
+            `;}).join('');
         }
 
         async function playSong(index) {
@@ -98,20 +133,35 @@
             currentIndex = index;
             const song = playlist[index];
             
-            audio.src = song.downloadUrl[song.downloadUrl.length - 1].url;
-            document.getElementById('playerTitle').textContent = song.name;
-            document.getElementById('playerArtist').textContent = song.artists.primary[0].name;
-            document.getElementById('playerCover').src = song.image[2].url;
+            // Get highest quality download link
+            const downloadLinks = song.downloadUrl || song.download_url || [];
+            if (downloadLinks.length === 0) return;
+            
+            const streamUrl = downloadLinks[downloadLinks.length - 1].url || downloadLinks[downloadLinks.length - 1].link;
+            
+            audio.src = streamUrl;
+            document.getElementById('playerTitle').textContent = song.name || song.title;
+            document.getElementById('playerArtist').textContent = song.artists?.primary?.[0]?.name || "Indie Artist";
+            document.getElementById('playerCover').src = song.image[song.image.length - 1]?.url || song.image[0].url;
             
             try {
                 await audio.play();
                 updateMediaSession(song);
-            } catch (e) { console.error("Play blocked"); }
+            } catch (e) { 
+                console.error("Playback failed:", e); 
+            }
             renderView();
         }
 
-        function togglePlay() { audio.paused ? audio.play() : audio.pause(); }
-        function changeTrack(dir) { playSong(currentIndex + dir); }
+        function togglePlay() { 
+            if (!audio.src) return;
+            audio.paused ? audio.play() : audio.pause(); 
+        }
+
+        function changeTrack(dir) { 
+            let newIndex = currentIndex + dir;
+            if (newIndex >= 0 && newIndex < playlist.length) playSong(newIndex);
+        }
 
         function setupMediaSession() {
             if ('mediaSession' in navigator) {
@@ -124,32 +174,45 @@
 
         function updateMediaSession(song) {
             if ('mediaSession' in navigator) {
+                const img = song.image[song.image.length - 1]?.url || song.image[0].url;
                 navigator.mediaSession.metadata = new MediaMetadata({
-                    title: song.name,
-                    artist: song.artists.primary[0].name,
-                    artwork: [{ src: song.image[2].url, sizes: '512x512', type: 'image/jpeg' }]
+                    title: song.name || song.title,
+                    artist: song.artists?.primary?.[0]?.name || "Indie Artist",
+                    artwork: [{ src: img, sizes: '512x512', type: 'image/jpeg' }]
                 });
                 navigator.mediaSession.playbackState = 'playing';
             }
         }
 
         audio.onplay = () => { 
-            document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-pause"></i>`;
+            document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-pause text-lg"></i>`;
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
         };
         audio.onpause = () => { 
-            document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-play ml-1"></i>`;
+            document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-play ml-1 text-lg"></i>`;
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         };
         audio.onended = () => changeTrack(1);
         audio.ontimeupdate = () => {
             if (isSeeking) return;
-            document.getElementById('progressBar').value = (audio.currentTime / audio.duration) * 100 || 0;
-            const m = Math.floor(audio.currentTime / 60);
-            const s = Math.floor(audio.currentTime % 60);
-            document.getElementById('currentTime').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+            const progress = (audio.currentTime / audio.duration) * 100 || 0;
+            document.getElementById('progressBar').value = progress;
+            document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
+            document.getElementById('durationTime').textContent = formatTime(audio.duration || 0);
         };
-        function seekAudio() { isSeeking = false; audio.currentTime = (document.getElementById('progressBar').value / 100) * audio.duration; }
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return `${m}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        function seekAudio() { 
+            isSeeking = false; 
+            if (audio.duration) {
+                audio.currentTime = (document.getElementById('progressBar').value / 100) * audio.duration;
+            }
+        }
     </script>
 </body>
 </html>
