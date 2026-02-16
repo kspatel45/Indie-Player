@@ -153,41 +153,46 @@
         const resultsGrid = document.getElementById('resultsGrid');
         
         let playlist = [], favorites = JSON.parse(localStorage.getItem('indie_favs') || '[]'), currentView = 'all', currentIndex = -1, isSeeking = false;
-        let wakeLock = null;
+        let wasPlayingBeforeInterruption = false;
 
         window.onload = () => { 
             triggerSearch("trending"); 
             setupMediaSession();
-            // Start Heartbeat to prevent sleep
-            setInterval(() => { if(!audio.paused) console.log("Heartbeat: Audio is active"); }, 30000);
+            setupAudioInterruptionHandling(); // FROM ORIGINAL FILE
         };
 
-        // NEW: Wake Lock to prevent background suspension
-        async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('Wake Lock active');
+        // --- BACKGROUND PLAY COMMANDS FROM ORIGINAL FILE ---
+        function setupAudioInterruptionHandling() {
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    wasPlayingBeforeInterruption = !audio.paused;
+                } else if (document.visibilityState === 'visible') {
+                    if (wasPlayingBeforeInterruption && audio.paused && currentIndex !== -1) {
+                        audio.play().catch(e => console.log("Auto-resume blocked"));
+                    }
                 }
-            } catch (err) { console.log(`${err.name}, ${err.message}`); }
+            });
+
+            if (window.AudioContext || window.webkitAudioContext) {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                ctx.onstatechange = () => {
+                    if (ctx.state === 'running' && wasPlayingBeforeInterruption && audio.paused) {
+                        audio.play().catch(e => console.log("State change resume failed"));
+                    }
+                };
+            }
         }
 
         async function triggerSearch(query = document.getElementById('searchInput').value) {
             if (!query) return;
             resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500">Searching...</div>`;
-            
             for (let i = 0; i < API_ENDPOINTS.length; i++) {
                 try {
                     const res = await fetch(`${API_ENDPOINTS[currentApiIndex]}/search/songs?query=${encodeURIComponent(query)}&limit=40`);
                     const result = await res.json();
                     const songs = result.data?.results || result.data || [];
-                    if (songs.length > 0) {
-                        playlist = songs;
-                        renderView(); return;
-                    }
-                } catch (e) {
-                    currentApiIndex = (currentApiIndex + 1) % API_ENDPOINTS.length;
-                }
+                    if (songs.length > 0) { playlist = songs; renderView(); return; }
+                } catch (e) { currentApiIndex = (currentApiIndex + 1) % API_ENDPOINTS.length; }
             }
         }
 
@@ -207,36 +212,23 @@
                 { name: "Naagzilla", date: "Aug 14, 2026" },
                 { name: "Mahavatar", date: "Dec 25, 2026" }
             ];
-
             try {
-                const res = await fetch(`${API_ENDPOINTS[currentApiIndex]}/search/albums?query=latest 2026 hindi movies&limit=15`);
+                const res = await fetch(`${API_ENDPOINTS[currentApiIndex]}/search/albums?query=latest 2026 movies&limit=15`);
                 const result = await res.json();
                 const apiAlbums = result.data?.results || result.data || [];
                 select.innerHTML = '<option value="">Select Movie</option>';
                 manualList.forEach(m => {
-                    const option = document.createElement('option');
-                    option.value = `search:${m.name}`;
-                    option.textContent = `${m.name} (${m.date})`;
-                    select.appendChild(option);
+                    const opt = document.createElement('option');
+                    opt.value = `search:${m.name}`; opt.textContent = `${m.name} (${m.date})`;
+                    select.appendChild(opt);
                 });
                 apiAlbums.forEach(album => {
                     const name = (album.name || album.title).replace(/&quot;/g, '"');
-                    if(!manualList.some(m => name.toLowerCase().includes(m.name.toLowerCase()))) {
-                        const option = document.createElement('option');
-                        option.value = album.id;
-                        option.textContent = `${name} (${album.year})`;
-                        select.appendChild(option);
-                    }
+                    const opt = document.createElement('option');
+                    opt.value = album.id; opt.textContent = `${name} (${album.year})`;
+                    select.appendChild(opt);
                 });
-            } catch (e) {
-                select.innerHTML = '<option value="">Select Movie</option>';
-                manualList.forEach(m => {
-                    const option = document.createElement('option');
-                    option.value = `search:${m.name}`;
-                    option.textContent = `${m.name} (${m.date})`;
-                    select.appendChild(option);
-                });
-            }
+            } catch (e) { select.innerHTML = '<option value="">Select Movie</option>'; }
         }
 
         async function loadMovieSongs(val, fullName) {
@@ -253,11 +245,8 @@
                     const result = await res.json();
                     playlist = result.data.songs || [];
                 }
-                renderView();
-                if(playlist.length > 0) playSong(0);
-            } catch (e) {
-                resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-red-400">Error loading.</div>`;
-            }
+                renderView(); if(playlist.length > 0) playSong(0);
+            } catch (e) { resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-red-400">Error.</div>`; }
         }
 
         function renderView() {
@@ -284,23 +273,21 @@
             currentIndex = index;
             const song = list[index];
             const urls = song.downloadUrl || song.download_url || [];
-            
-            // Set source and clear old buffers
             audio.src = urls[urls.length - 1]?.url || urls[urls.length - 1]?.link;
             document.getElementById('playerTitle').textContent = (song.name || song.title).replace(/&quot;/g, '"');
             document.getElementById('playerArtist').textContent = song.artists?.primary?.[0]?.name || "Artist";
             document.getElementById('playerCover').src = song.image[song.image.length - 1]?.url;
             document.getElementById('dlBtn').disabled = false;
-
-            requestWakeLock(); // Lock power saving
-            audio.play().then(() => updateMediaSession(song)).catch(console.error);
+            audio.play().then(() => {
+                wasPlayingBeforeInterruption = true;
+                updateMediaSession(song);
+            }).catch(console.error);
             renderView();
         }
 
         function toggleFavorite(e, idx) {
             e.stopPropagation();
-            const list = (currentView === 'fav' ? favorites : playlist);
-            const song = list[idx];
+            const song = (currentView === 'fav' ? favorites : playlist)[idx];
             const fIdx = favorites.findIndex(f => f.id === song.id);
             fIdx > -1 ? favorites.splice(fIdx, 1) : favorites.unshift(song);
             localStorage.setItem('indie_favs', JSON.stringify(favorites));
@@ -309,47 +296,30 @@
 
         function switchTab(v) {
             currentView = v;
-            const tabs = ['all', 'new', 'old', 'bhajan', 'fav'];
-            tabs.forEach(tab => {
+            ['all', 'new', 'old', 'bhajan', 'fav'].forEach(tab => {
                 const el = document.getElementById(`tab-${tab}`);
                 if(el) el.className = v === tab ? 'pb-2 tab-active' : 'pb-2';
             });
-            const filter = document.getElementById('movieFilterContainer');
-            filter.classList.add('hidden');
+            document.getElementById('movieFilterContainer').classList.add('hidden');
             if(v === 'all') triggerSearch("trending");
-            else if(v === 'new') {
-                filter.classList.remove('hidden');
-                fetchNewMovies(); 
-                triggerSearch("2026 hits");
-            }
+            else if(v === 'new') { document.getElementById('movieFilterContainer').classList.remove('hidden'); fetchNewMovies(); triggerSearch("2026 songs"); }
             else if(v === 'old') triggerSearch("90s hindi hits");
             else if(v === 'bhajan') triggerSearch("bhajan");
             else if(v === 'fav') renderView();
         }
 
         function downloadCurrent() {
-            const list = (currentView === 'fav') ? favorites : playlist;
-            const song = list[currentIndex];
+            const song = (currentView === 'fav' ? favorites : playlist)[currentIndex];
             const urls = song.downloadUrl || song.download_url || [];
-            const link = document.createElement('a');
-            link.href = urls[urls.length - 1]?.url || urls[urls.length - 1]?.link;
-            link.download = `${song.name}.mp3`;
-            link.click();
+            window.open(urls[urls.length - 1]?.url || urls[urls.length - 1]?.link, '_blank');
         }
 
         let sleepTimerId = null, sleepRemaining = 0;
         function setSleepTimer() {
             const input = document.getElementById('sleepMinutes'), display = document.getElementById('sleepDisplay'), btn = document.getElementById('sleepBtn');
-            if (sleepTimerId) {
-                clearInterval(sleepTimerId); sleepTimerId = null;
-                display.classList.add('hidden'); input.classList.remove('hidden');
-                btn.textContent = "Set"; return;
-            }
-            const mins = parseInt(input.value);
-            if (isNaN(mins) || mins <= 0) return;
-            sleepRemaining = mins * 60;
-            input.classList.add('hidden'); display.classList.remove('hidden');
-            btn.textContent = "Stop";
+            if (sleepTimerId) { clearInterval(sleepTimerId); sleepTimerId = null; display.classList.add('hidden'); input.classList.remove('hidden'); btn.textContent = "Set"; return; }
+            const mins = parseInt(input.value); if (isNaN(mins) || mins <= 0) return;
+            sleepRemaining = mins * 60; input.classList.add('hidden'); display.classList.remove('hidden'); btn.textContent = "Stop";
             sleepTimerId = setInterval(() => {
                 sleepRemaining--;
                 if (sleepRemaining <= 0) { audio.pause(); setSleepTimer(); }
@@ -377,19 +347,8 @@
             }
         }
 
-        audio.onplay = () => { document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-pause"></i>`; };
+        audio.onplay = () => { document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-pause"></i>`; wasPlayingBeforeInterruption = true; };
         audio.onpause = () => { document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-play ml-0.5"></i>`; };
-        
-        // AUTO RECOVER: If audio stalls, try to resume
-        audio.onwaiting = () => { console.log("Buffering..."); };
-        audio.onerror = () => {
-            console.log("Audio Error, retrying source...");
-            const currentPos = audio.currentTime;
-            audio.load();
-            audio.currentTime = currentPos;
-            audio.play();
-        };
-
         audio.onended = () => changeTrack(1);
         audio.ontimeupdate = () => {
             if (isSeeking) return;
