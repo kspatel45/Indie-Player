@@ -144,7 +144,7 @@
         </div>
     </footer>
 
-    <audio id="mainAudio" crossorigin="anonymous" playsinline></audio>
+    <audio id="mainAudio" crossorigin="anonymous" playsinline preload="auto"></audio>
 
     <script>
         const API_ENDPOINTS = ["https://saavn.dev/api", "https://saavn.me/api", "https://saavn.sumit.co/api"];
@@ -153,8 +153,24 @@
         const resultsGrid = document.getElementById('resultsGrid');
         
         let playlist = [], favorites = JSON.parse(localStorage.getItem('indie_favs') || '[]'), currentView = 'all', currentIndex = -1, isSeeking = false;
+        let wakeLock = null;
 
-        window.onload = () => { triggerSearch("trending"); setupMediaSession(); };
+        window.onload = () => { 
+            triggerSearch("trending"); 
+            setupMediaSession();
+            // Start Heartbeat to prevent sleep
+            setInterval(() => { if(!audio.paused) console.log("Heartbeat: Audio is active"); }, 30000);
+        };
+
+        // NEW: Wake Lock to prevent background suspension
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock active');
+                }
+            } catch (err) { console.log(`${err.name}, ${err.message}`); }
+        }
 
         async function triggerSearch(query = document.getElementById('searchInput').value) {
             if (!query) return;
@@ -178,8 +194,6 @@
         async function fetchNewMovies() {
             const select = document.getElementById('movieSelect');
             select.innerHTML = '<option value="">Loading...</option>';
-            
-            // EXACT LIST YOU REQUESTED (Fallbacks if API hasn't updated)
             const manualList = [
                 { name: "Bhabiji Ghar Par Hain!", date: "Feb 6, 2026" },
                 { name: "O' Romeo", date: "Feb 13, 2026" },
@@ -195,22 +209,16 @@
             ];
 
             try {
-                // Fetch dynamic data from API
                 const res = await fetch(`${API_ENDPOINTS[currentApiIndex]}/search/albums?query=latest 2026 hindi movies&limit=15`);
                 const result = await res.json();
                 const apiAlbums = result.data?.results || result.data || [];
-
                 select.innerHTML = '<option value="">Select Movie</option>';
-                
-                // 1. Add requested manual movies first
                 manualList.forEach(m => {
                     const option = document.createElement('option');
-                    option.value = `search:${m.name}`; // We use search for manual items
+                    option.value = `search:${m.name}`;
                     option.textContent = `${m.name} (${m.date})`;
                     select.appendChild(option);
                 });
-
-                // 2. Add API albums if they aren't already in the manual list
                 apiAlbums.forEach(album => {
                     const name = (album.name || album.title).replace(/&quot;/g, '"');
                     if(!manualList.some(m => name.toLowerCase().includes(m.name.toLowerCase()))) {
@@ -221,7 +229,6 @@
                     }
                 });
             } catch (e) {
-                // If API fails, just show manual list
                 select.innerHTML = '<option value="">Select Movie</option>';
                 manualList.forEach(m => {
                     const option = document.createElement('option');
@@ -235,16 +242,13 @@
         async function loadMovieSongs(val, fullName) {
             if(!val) return;
             resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500">Loading ${fullName}...</div>`;
-            
             try {
                 if(val.startsWith('search:')) {
-                    // Search for songs from the manual movie name
                     const movieName = val.split(':')[1];
                     const res = await fetch(`${API_ENDPOINTS[currentApiIndex]}/search/songs?query=${encodeURIComponent(movieName)}&limit=20`);
                     const result = await res.json();
                     playlist = result.data?.results || result.data || [];
                 } else {
-                    // Fetch directly by Album ID
                     const res = await fetch(`${API_ENDPOINTS[currentApiIndex]}/albums?id=${val}`);
                     const result = await res.json();
                     playlist = result.data.songs || [];
@@ -252,7 +256,7 @@
                 renderView();
                 if(playlist.length > 0) playSong(0);
             } catch (e) {
-                resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-red-400">Could not load songs for this movie.</div>`;
+                resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-red-400">Error loading.</div>`;
             }
         }
 
@@ -281,12 +285,14 @@
             const song = list[index];
             const urls = song.downloadUrl || song.download_url || [];
             
+            // Set source and clear old buffers
             audio.src = urls[urls.length - 1]?.url || urls[urls.length - 1]?.link;
-            document.getElementById('playerTitle').textContent = song.name || song.title;
+            document.getElementById('playerTitle').textContent = (song.name || song.title).replace(/&quot;/g, '"');
             document.getElementById('playerArtist').textContent = song.artists?.primary?.[0]?.name || "Artist";
             document.getElementById('playerCover').src = song.image[song.image.length - 1]?.url;
             document.getElementById('dlBtn').disabled = false;
 
+            requestWakeLock(); // Lock power saving
             audio.play().then(() => updateMediaSession(song)).catch(console.error);
             renderView();
         }
@@ -308,15 +314,13 @@
                 const el = document.getElementById(`tab-${tab}`);
                 if(el) el.className = v === tab ? 'pb-2 tab-active' : 'pb-2';
             });
-
             const filter = document.getElementById('movieFilterContainer');
             filter.classList.add('hidden');
-
             if(v === 'all') triggerSearch("trending");
             else if(v === 'new') {
                 filter.classList.remove('hidden');
                 fetchNewMovies(); 
-                triggerSearch("2026 new movie songs");
+                triggerSearch("2026 hits");
             }
             else if(v === 'old') triggerSearch("90s hindi hits");
             else if(v === 'bhajan') triggerSearch("bhajan");
@@ -365,7 +369,7 @@
         function updateMediaSession(song) {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
-                    title: song.name || song.title,
+                    title: (song.name || song.title).replace(/&quot;/g, '"'),
                     artist: song.artists?.primary?.[0]?.name || "Artist",
                     artwork: [{ src: song.image[song.image.length - 1]?.url, sizes: '512x512', type: 'image/jpeg' }]
                 });
@@ -375,6 +379,17 @@
 
         audio.onplay = () => { document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-pause"></i>`; };
         audio.onpause = () => { document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-play ml-0.5"></i>`; };
+        
+        // AUTO RECOVER: If audio stalls, try to resume
+        audio.onwaiting = () => { console.log("Buffering..."); };
+        audio.onerror = () => {
+            console.log("Audio Error, retrying source...");
+            const currentPos = audio.currentTime;
+            audio.load();
+            audio.currentTime = currentPos;
+            audio.play();
+        };
+
         audio.onended = () => changeTrack(1);
         audio.ontimeupdate = () => {
             if (isSeeking) return;
