@@ -26,9 +26,7 @@
             backdrop-filter: blur(10px);
             border-top: 1px solid rgba(255,255,255,0.1);
         }
-        .track-card:hover {
-            background: rgba(65, 105, 225, 0.05);
-        }
+        .track-card:hover { background: rgba(65, 105, 225, 0.05); }
         .active-track {
             background: rgba(65, 105, 225, 0.1) !important;
             border-left: 4px solid var(--primary);
@@ -39,6 +37,7 @@
             background: #30363d;
             border-radius: 2px;
             cursor: pointer;
+            width: 100%;
         }
         .progress-bar::-webkit-slider-thumb {
             appearance: none;
@@ -54,48 +53,17 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-        .chakra-container:hover .chakra-svg {
-            animation: rotate-slow 10s linear infinite;
-        }
+        .chakra-container:hover .chakra-svg { animation: rotate-slow 10s linear infinite; }
         
-        .playing-bar {
-            width: 3px;
-            background: var(--primary);
-            animation: music-bar 1s ease-in-out infinite;
-        }
-        @keyframes music-bar {
-            0%, 100% { height: 4px; }
-            50% { height: 16px; }
-        }
-
-        .tab-active {
-            color: white;
-            border-bottom: 2px solid var(--primary);
-        }
-
-        /* Mobile Search Styling */
-        .search-container {
-            display: flex;
-            align-items: center;
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 9999px;
-            padding: 0 4px 0 12px;
-            width: 100%;
-            transition: border-color 0.2s;
-        }
-        .search-container:focus-within {
-            border-color: var(--primary);
-        }
+        .tab-active { color: white; border-bottom: 2px solid var(--primary); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="flex flex-col h-screen">
 
-    <!-- Header -->
     <header class="p-3 md:p-4 border-b border-slate-800 bg-[#0d1117]/80 sticky top-0 z-[60]">
         <div class="max-w-6xl mx-auto flex flex-col gap-3">
             <div class="flex items-center justify-between gap-3">
-                <!-- Logo -->
                 <div class="flex items-center gap-2 md:gap-3">
                     <div class="chakra-container relative w-8 h-8 md:w-10 md:h-10 bg-white rounded-full flex items-center justify-center border-2 border-slate-800">
                         <svg viewBox="0 0 100 100" class="chakra-svg w-6 h-6 md:w-8 md:h-8 fill-[var(--navy)]">
@@ -110,47 +78,43 @@
                     <h1 class="text-lg md:text-xl font-black tracking-tighter">Indie<span class="text-[#4169e1]">Player</span></h1>
                 </div>
                 
-                <!-- Sleep Timer (Desktop Friendly) -->
-                <div class="hidden sm:flex items-center gap-2 bg-[#161b22] px-3 py-1.5 rounded-full border border-slate-700">
+                <div class="flex items-center gap-2 bg-[#161b22] px-3 py-1.5 rounded-full border border-slate-700">
                     <i class="fas fa-moon text-xs text-slate-400"></i>
                     <input type="number" id="sleepMinutes" placeholder="Min" class="w-10 bg-transparent text-xs focus:outline-none text-center" min="1">
-                    <button onclick="setSleepTimer()" id="sleepBtn" class="text-[10px] font-bold uppercase tracking-wider text-[#4169e1] hover:text-white transition-colors">Set</button>
+                    <button onclick="setSleepTimer()" id="sleepBtn" class="text-[10px] font-bold uppercase tracking-wider text-[#4169e1]">Set</button>
                     <div id="sleepDisplay" class="hidden text-[10px] text-slate-400 font-mono"></div>
                 </div>
             </div>
 
-            <!-- Search Bar - Always Visible and Dynamic -->
-            <div class="w-full max-w-2xl mx-auto">
-                <div class="search-container">
-                    <i class="fas fa-search text-slate-500 text-xs mr-2"></i>
-                    <input type="text" id="searchInput" placeholder="Search Indie, Bollywood, Hits..." 
-                        class="flex-grow bg-transparent py-2 px-1 focus:outline-none text-sm">
-                    <button onclick="triggerSearch()" class="bg-[#4169e1] text-white px-4 py-1.5 rounded-full text-xs font-bold hover:bg-blue-600 transition-colors">
-                        Search
-                    </button>
-                </div>
+            <div class="w-full max-w-2xl mx-auto flex gap-2">
+                <input type="text" id="searchInput" placeholder="Search Indie, Bollywood..." class="flex-grow bg-[#161b22] border border-slate-700 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-[#4169e1]">
+                <button onclick="triggerSearch()" class="bg-[#4169e1] text-white px-5 py-2 rounded-full text-xs font-bold">Search</button>
             </div>
 
-            <!-- Tabs -->
-            <div class="flex gap-6 md:gap-8 text-xs md:text-sm font-bold text-slate-500 border-t border-slate-800/50 pt-2">
-                <button onclick="switchTab('all')" id="tab-all" class="pb-2 tab-active transition-all">All Songs</button>
-                <button onclick="switchTab('fav')" id="tab-fav" class="pb-2 transition-all flex items-center gap-2">
-                    <i class="fas fa-heart text-xs"></i> Favorites
-                </button>
+            <div class="flex items-center justify-between border-t border-slate-800/50 pt-2">
+                <div class="flex gap-4 md:gap-6 text-[10px] md:text-sm font-bold text-slate-500 overflow-x-auto no-scrollbar whitespace-nowrap">
+                    <button onclick="switchTab('all')" id="tab-all" class="pb-2 tab-active">All Songs</button>
+                    <button onclick="switchTab('new')" id="tab-new" class="pb-2">New Songs</button>
+                    <button onclick="switchTab('old')" id="tab-old" class="pb-2">Old Songs</button>
+                    <button onclick="switchTab('bhajan')" id="tab-bhajan" class="pb-2">Bhajan</button>
+                    <button onclick="switchTab('fav')" id="tab-fav" class="pb-2 flex items-center gap-2"><i class="fas fa-heart"></i> Favorites</button>
+                </div>
+                
+                <div id="movieFilterContainer" class="hidden">
+                    <select id="movieSelect" onchange="loadMovieSongs(this.value, this.options[this.selectedIndex].text)" class="bg-[#161b22] text-[10px] text-blue-400 font-bold border border-blue-900 rounded px-2 py-1 outline-none max-w-[150px]">
+                        <option value="">New Movies</option>
+                    </select>
+                </div>
             </div>
         </div>
     </header>
 
-    <!-- Content Area -->
     <main class="flex-grow overflow-y-auto custom-scrollbar p-4 pb-48">
-        <div id="resultsGrid" class="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            <!-- Dynamic Content -->
-        </div>
+        <div id="resultsGrid" class="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"></div>
     </main>
 
-    <!-- Player Bar -->
     <footer class="fixed bottom-0 left-0 right-0 glass-player z-50">
-        <div class="w-full flex items-center gap-0 px-1 -mt-1">
+        <div class="w-full flex items-center px-1">
             <span id="currentTime" class="text-[9px] px-2 text-slate-500">0:00</span>
             <input type="range" id="progressBar" value="0" step="0.1" class="progress-bar flex-grow" oninput="isSeeking = true" onchange="seekAudio()">
             <span id="durationTime" class="text-[9px] px-2 text-slate-500">0:00</span>
@@ -158,270 +122,244 @@
 
         <div class="max-w-6xl mx-auto p-4 pt-2">
             <div class="flex items-center justify-between gap-4">
-                <div class="flex items-center gap-3 w-1/3 sm:w-1/4">
-                    <img id="playerCover" src="https://via.placeholder.com/150" class="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover shadow-lg border border-slate-700">
-                    <div class="overflow-hidden">
-                        <p id="playerTitle" class="text-[13px] md:text-sm font-bold truncate">Nothing playing</p>
-                        <p id="playerArtist" class="text-[11px] md:text-xs text-slate-400 truncate">Select a track</p>
+                <div class="flex items-center gap-3 w-1/3 overflow-hidden">
+                    <img id="playerCover" src="" class="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover bg-slate-800">
+                    <div class="truncate">
+                        <p id="playerTitle" class="text-[13px] font-bold truncate">Nothing playing</p>
+                        <p id="playerArtist" class="text-[11px] text-slate-400 truncate">Select a track</p>
                     </div>
                 </div>
 
-                <div class="flex flex-col items-center gap-1">
-                    <div class="flex items-center gap-4 md:gap-8">
-                        <button onclick="changeTrack(-1)" class="text-slate-400 hover:text-white transition-colors">
-                            <i class="fas fa-step-backward text-base md:text-lg"></i>
-                        </button>
-                        <button id="masterPlayBtn" onclick="togglePlay()" class="w-10 h-10 md:w-12 md:h-12 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-xl">
-                            <i class="fas fa-play ml-0.5 text-base md:text-lg"></i>
-                        </button>
-                        <button onclick="changeTrack(1)" class="text-slate-400 hover:text-white transition-colors">
-                            <i class="fas fa-step-forward text-base md:text-lg"></i>
-                        </button>
-                    </div>
+                <div class="flex items-center gap-4 md:gap-8">
+                    <button onclick="changeTrack(-1)" class="text-slate-400"><i class="fas fa-step-backward"></i></button>
+                    <button id="masterPlayBtn" onclick="togglePlay()" class="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center"><i class="fas fa-play ml-0.5"></i></button>
+                    <button onclick="changeTrack(1)" class="text-slate-400"><i class="fas fa-step-forward"></i></button>
                 </div>
 
-                <div class="flex items-center justify-end gap-3 md:gap-5 w-1/3 sm:w-1/4">
-                    <button onclick="downloadCurrent()" id="dlBtn" class="text-slate-400 hover:text-[#4169e1] disabled:opacity-30 p-2" disabled title="Download">
-                        <i class="fas fa-download"></i>
-                    </button>
+                <div class="flex items-center justify-end w-1/3 gap-4">
+                    <button onclick="downloadCurrent()" id="dlBtn" class="text-slate-400 disabled:opacity-30" disabled><i class="fas fa-download"></i></button>
                 </div>
             </div>
-            <p class="text-[8px] md:text-[10px] text-slate-500 text-center uppercase font-bold tracking-[0.2em] mt-2 opacity-50">Created by Kartik Patel</p>
+              <p class="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mt-2 text-center">Created by Kartik Patel</p>
         </div>
     </footer>
 
-    <audio id="mainAudio" crossorigin="anonymous" playsinline></audio>
+    <audio id="mainAudio" crossorigin="anonymous" playsinline preload="auto"></audio>
 
     <script>
-        const API_ENDPOINTS = ["https://saavn.sumit.co/api", "https://saavn.dev/api", "https://saavn.me/api"];
-        const PROXY_URL = "https://api.allorigins.win/get?url=";
-        
+        const API_ENDPOINTS = ["https://saavn.dev/api", "https://saavn.me/api", "https://saavn.sumit.co/api"];
         let currentApiIndex = 0;
         const audio = document.getElementById('mainAudio');
         const resultsGrid = document.getElementById('resultsGrid');
-        const searchInput = document.getElementById('searchInput');
         
-        let allSongs = [];
-        let favorites = JSON.parse(localStorage.getItem('indie_favs') || '[]');
-        let currentView = 'all';
-        let playlist = [];
-        let currentIndex = -1;
-        let isSeeking = false;
+        let playlist = [], favorites = JSON.parse(localStorage.getItem('indie_favs') || '[]'), currentView = 'all', currentIndex = -1, isSeeking = false;
         let wasPlayingBeforeInterruption = false;
 
-        // --- Core Functions ---
-
-        window.onload = () => {
-            fetchSongs(`search/songs?query=latest&limit=25`);
-            setupAudioInterruptionHandling();
+        window.onload = () => { 
+            triggerSearch("trending"); 
+            setupMediaSession();
+            setupAudioInterruptionHandling(); // FROM ORIGINAL FILE
         };
 
-        function triggerSearch() {
-            const query = searchInput.value.trim();
-            if (query) {
-                switchTab('all');
-                fetchSongs(`search/songs?query=${encodeURIComponent(query)}&limit=30`);
-            }
-        }
-
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') triggerSearch();
-        });
-
-        async function fetchSongs(endpoint) {
-            let success = false;
-            resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500"><i class="fas fa-circle-notch fa-spin text-3xl mb-4 text-[#4169e1]"></i><p>Scanning indie frequencies...</p></div>`;
-
-            for (let i = 0; i < API_ENDPOINTS.length; i++) {
-                const url = `${API_ENDPOINTS[currentApiIndex]}/${endpoint}`;
-                try {
-                    const response = await fetch(url);
-                    if (response.ok) {
-                        const result = await response.json();
-                        if (handleApiResponse(result)) { success = true; break; }
-                    }
-                } catch (err) {
-                    try {
-                        const pResponse = await fetch(`${PROXY_URL}${encodeURIComponent(url)}`);
-                        const pData = await pResponse.json();
-                        if (handleApiResponse(JSON.parse(pData.contents))) { success = true; break; }
-                    } catch (e) {}
-                }
-                currentApiIndex = (currentApiIndex + 1) % API_ENDPOINTS.length;
-            }
-            if (!success) resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400"><p>Servers are reaching capacity. Try again in a moment.</p></div>`;
-        }
-
-        function handleApiResponse(result) {
-            const data = result.data?.results || result.data || [];
-            if (data.length > 0) { 
-                allSongs = data; 
-                if (currentView === 'all') playlist = allSongs;
-                renderView(); 
-                return true; 
-            }
-            return false;
-        }
-
-        function switchTab(view) {
-            currentView = view;
-            document.getElementById('tab-all').classList.toggle('tab-active', view === 'all');
-            document.getElementById('tab-fav').classList.toggle('tab-active', view === 'fav');
-            playlist = (view === 'all') ? allSongs : favorites;
-            renderView();
-        }
-
-        function toggleFavorite(e, index) {
-            e.stopPropagation();
-            const song = playlist[index];
-            const favIndex = favorites.findIndex(f => f.id === song.id);
-            if (favIndex > -1) favorites.splice(favIndex, 1);
-            else favorites.unshift(song);
-            localStorage.setItem('indie_favs', JSON.stringify(favorites));
-            if (currentView === 'fav') playlist = favorites;
-            renderView();
-        }
-
-        function renderView() {
-            if (playlist.length === 0) {
-                resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500"><i class="fas ${currentView === 'fav' ? 'fa-heart-broken' : 'fa-music'} text-3xl mb-4 opacity-20"></i><p>${currentView === 'fav' ? 'No favorites added yet' : 'No songs found'}</p></div>`;
-                return;
-            }
-
-            resultsGrid.innerHTML = playlist.map((song, index) => {
-                const img = song.image?.[song.image.length - 1]?.url || song.image?.[song.image.length - 1]?.link || 'https://via.placeholder.com/150';
-                const artists = Array.isArray(song.artists?.primary) ? song.artists.primary.map(a => a.name).join(', ') : (song.subtitle || "Indie Artist");
-                const isFav = favorites.some(f => f.id === song.id);
-
-                return `
-                <div onclick="playSong(${index})" class="track-card p-3 md:p-4 rounded-2xl bg-[#161b22]/40 border border-slate-800/50 flex flex-col gap-3 cursor-pointer transition-all group ${currentIndex === index ? 'active-track' : ''}">
-                    <div class="relative aspect-square overflow-hidden rounded-xl">
-                        <img src="${img}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy">
-                        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                             ${currentIndex === index && !audio.paused ? '<div class="flex gap-1 items-end h-4"><div class="playing-bar" style="animation-delay:0s"></div><div class="playing-bar" style="animation-delay:0.2s"></div><div class="playing-bar" style="animation-delay:0.4s"></div></div>' : '<i class="fas fa-play text-white text-xl"></i>'}
-                        </div>
-                        <button onclick="toggleFavorite(event, ${index})" class="absolute top-2 right-2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center transition-all hover:scale-110">
-                            <i class="${isFav ? 'fas text-red-500' : 'far text-white'} fa-heart text-xs md:text-sm"></i>
-                        </button>
-                    </div>
-                    <div class="overflow-hidden">
-                        <h3 class="text-xs md:text-sm font-bold truncate group-hover:text-[#4169e1] transition-colors">${song.name || song.title}</h3>
-                        <p class="text-[10px] md:text-xs text-slate-500 truncate">${artists}</p>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        function playSong(index) {
-            if (index < 0 || index >= playlist.length) return;
-            const song = playlist[index];
-            if (currentIndex !== index || audio.src === "") {
-                currentIndex = index;
-                const urls = song.downloadUrl || song.download_url || [];
-                const streamUrl = urls[urls.length - 1]?.url || urls[urls.length - 1]?.link || urls[0]?.url;
-                if (!streamUrl) return;
-
-                audio.src = streamUrl;
-                document.getElementById('playerTitle').textContent = song.name || song.title;
-                document.getElementById('playerArtist').textContent = Array.isArray(song.artists?.primary) ? song.artists.primary.map(a => a.name).join(', ') : "Indie Artist";
-                document.getElementById('playerCover').src = song.image[song.image.length - 1]?.url || song.image[0]?.url;
-                document.getElementById('dlBtn').disabled = false;
-                renderView();
-                audio.play().catch(console.error);
-            } else { togglePlay(); }
-        }
-
-        function togglePlay() { 
-            if (currentIndex === -1) return;
-            if (audio.paused) audio.play().catch(console.error);
-            else audio.pause();
-        }
-
-        function changeTrack(dir) { let next = currentIndex + dir; if (next >= 0 && next < playlist.length) playSong(next); }
-
-        function downloadCurrent() { 
-            if (currentIndex !== -1) {
-                const urls = playlist[currentIndex].downloadUrl || playlist[currentIndex].download_url;
-                window.open(urls[urls.length - 1].url || urls[urls.length - 1].link, '_blank');
-            }
-        }
-
-        // --- Resume & Interruption Handling ---
+        // --- BACKGROUND PLAY COMMANDS FROM ORIGINAL FILE ---
         function setupAudioInterruptionHandling() {
-            // Track if it was playing before the user switched tabs or a call came in
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'hidden') {
                     wasPlayingBeforeInterruption = !audio.paused;
                 } else if (document.visibilityState === 'visible') {
                     if (wasPlayingBeforeInterruption && audio.paused && currentIndex !== -1) {
-                        audio.play().catch(() => {
-                            // Some browsers need a user interaction to resume after a long interruption
-                            console.log("Auto-resume blocked, waiting for user interaction");
-                        });
+                        audio.play().catch(e => console.log("Auto-resume blocked"));
                     }
                 }
             });
 
-            // Handle the Web Audio API "interrupted" state which occurs during phone calls
             if (window.AudioContext || window.webkitAudioContext) {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 ctx.onstatechange = () => {
                     if (ctx.state === 'running' && wasPlayingBeforeInterruption && audio.paused) {
-                        audio.play().catch(e => console.log("State change resume failed:", e));
+                        audio.play().catch(e => console.log("State change resume failed"));
                     }
                 };
             }
         }
 
-        audio.onplay = () => { 
-            document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-pause text-lg"></i>`; 
-            wasPlayingBeforeInterruption = true;
-            renderView(); 
+        async function triggerSearch(query = document.getElementById('searchInput').value) {
+            if (!query) return;
+            resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500">Searching...</div>`;
+            for (let i = 0; i < API_ENDPOINTS.length; i++) {
+                try {
+                    const res = await fetch(`${API_ENDPOINTS[currentApiIndex]}/search/songs?query=${encodeURIComponent(query)}&limit=40`);
+                    const result = await res.json();
+                    const songs = result.data?.results || result.data || [];
+                    if (songs.length > 0) { playlist = songs; renderView(); return; }
+                } catch (e) { currentApiIndex = (currentApiIndex + 1) % API_ENDPOINTS.length; }
+            }
         }
-        audio.onpause = () => { 
-            document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-play ml-0.5 text-lg"></i>`; 
-            renderView(); 
+
+        async function fetchNewMovies() {
+            const select = document.getElementById('movieSelect');
+            select.innerHTML = '<option value="">Loading...</option>';
+            const manualList = [
+                { name: "Bhabiji Ghar Par Hain!", date: "Feb 6, 2026" },
+                { name: "O' Romeo", date: "Feb 13, 2026" },
+                { name: "Tu Yaa Main", date: "Feb 14, 2026" },
+                { name: "Veer Murarbaji", date: "Feb 19, 2026" },
+                { name: "Charak", date: "March 6, 2026" },
+                { name: "Gabru", date: "March 13, 2026" },
+                { name: "Dacoit", date: "March 19, 2026" },
+                { name: "Toxic", date: "March 19, 2026" },
+                { name: "Dhamaal 4", date: "March 2026" },
+                { name: "Naagzilla", date: "Aug 14, 2026" },
+                { name: "Mahavatar", date: "Dec 25, 2026" }
+            ];
+            try {
+                const res = await fetch(`${API_ENDPOINTS[currentApiIndex]}/search/albums?query=latest 2026 movies&limit=15`);
+                const result = await res.json();
+                const apiAlbums = result.data?.results || result.data || [];
+                select.innerHTML = '<option value="">Select Movie</option>';
+                manualList.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = `search:${m.name}`; opt.textContent = `${m.name} (${m.date})`;
+                    select.appendChild(opt);
+                });
+                apiAlbums.forEach(album => {
+                    const name = (album.name || album.title).replace(/&quot;/g, '"');
+                    const opt = document.createElement('option');
+                    opt.value = album.id; opt.textContent = `${name} (${album.year})`;
+                    select.appendChild(opt);
+                });
+            } catch (e) { select.innerHTML = '<option value="">Select Movie</option>'; }
         }
+
+        async function loadMovieSongs(val, fullName) {
+            if(!val) return;
+            resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500">Loading ${fullName}...</div>`;
+            try {
+                if(val.startsWith('search:')) {
+                    const movieName = val.split(':')[1];
+                    const res = await fetch(`${API_ENDPOINTS[currentApiIndex]}/search/songs?query=${encodeURIComponent(movieName)}&limit=20`);
+                    const result = await res.json();
+                    playlist = result.data?.results || result.data || [];
+                } else {
+                    const res = await fetch(`${API_ENDPOINTS[currentApiIndex]}/albums?id=${val}`);
+                    const result = await res.json();
+                    playlist = result.data.songs || [];
+                }
+                renderView(); if(playlist.length > 0) playSong(0);
+            } catch (e) { resultsGrid.innerHTML = `<div class="col-span-full text-center py-20 text-red-400">Error.</div>`; }
+        }
+
+        function renderView() {
+            const list = (currentView === 'fav') ? favorites : playlist;
+            resultsGrid.innerHTML = list.map((song, index) => {
+                const img = song.image?.[song.image.length - 1]?.url || 'https://via.placeholder.com/150';
+                const isFav = favorites.some(f => f.id === song.id);
+                return `
+                <div onclick="playSong(${index})" class="track-card p-3 rounded-2xl bg-[#161b22]/40 cursor-pointer ${currentIndex === index ? 'active-track' : ''}">
+                    <div class="relative aspect-square overflow-hidden rounded-xl mb-2">
+                        <img src="${img}" class="w-full h-full object-cover">
+                        <button onclick="toggleFavorite(event, ${index})" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 flex items-center justify-center">
+                            <i class="${isFav ? 'fas text-red-500' : 'far text-white'} fa-heart text-xs"></i>
+                        </button>
+                    </div>
+                    <h3 class="text-xs font-bold truncate">${song.name || song.title}</h3>
+                </div>`;
+            }).join('');
+        }
+
+        async function playSong(index) {
+            const list = (currentView === 'fav') ? favorites : playlist;
+            if (index < 0 || index >= list.length) return;
+            currentIndex = index;
+            const song = list[index];
+            const urls = song.downloadUrl || song.download_url || [];
+            audio.src = urls[urls.length - 1]?.url || urls[urls.length - 1]?.link;
+            document.getElementById('playerTitle').textContent = (song.name || song.title).replace(/&quot;/g, '"');
+            document.getElementById('playerArtist').textContent = song.artists?.primary?.[0]?.name || "Artist";
+            document.getElementById('playerCover').src = song.image[song.image.length - 1]?.url;
+            document.getElementById('dlBtn').disabled = false;
+            audio.play().then(() => {
+                wasPlayingBeforeInterruption = true;
+                updateMediaSession(song);
+            }).catch(console.error);
+            renderView();
+        }
+
+        function toggleFavorite(e, idx) {
+            e.stopPropagation();
+            const song = (currentView === 'fav' ? favorites : playlist)[idx];
+            const fIdx = favorites.findIndex(f => f.id === song.id);
+            fIdx > -1 ? favorites.splice(fIdx, 1) : favorites.unshift(song);
+            localStorage.setItem('indie_favs', JSON.stringify(favorites));
+            renderView();
+        }
+
+        function switchTab(v) {
+            currentView = v;
+            ['all', 'new', 'old', 'bhajan', 'fav'].forEach(tab => {
+                const el = document.getElementById(`tab-${tab}`);
+                if(el) el.className = v === tab ? 'pb-2 tab-active' : 'pb-2';
+            });
+            document.getElementById('movieFilterContainer').classList.add('hidden');
+            if(v === 'all') triggerSearch("trending");
+            else if(v === 'new') { document.getElementById('movieFilterContainer').classList.remove('hidden'); fetchNewMovies(); triggerSearch("2026 songs"); }
+            else if(v === 'old') triggerSearch("90s hindi hits");
+            else if(v === 'bhajan') triggerSearch("bhajan");
+            else if(v === 'fav') renderView();
+        }
+
+        function downloadCurrent() {
+            const song = (currentView === 'fav' ? favorites : playlist)[currentIndex];
+            const urls = song.downloadUrl || song.download_url || [];
+            window.open(urls[urls.length - 1]?.url || urls[urls.length - 1]?.link, '_blank');
+        }
+
+        let sleepTimerId = null, sleepRemaining = 0;
+        function setSleepTimer() {
+            const input = document.getElementById('sleepMinutes'), display = document.getElementById('sleepDisplay'), btn = document.getElementById('sleepBtn');
+            if (sleepTimerId) { clearInterval(sleepTimerId); sleepTimerId = null; display.classList.add('hidden'); input.classList.remove('hidden'); btn.textContent = "Set"; return; }
+            const mins = parseInt(input.value); if (isNaN(mins) || mins <= 0) return;
+            sleepRemaining = mins * 60; input.classList.add('hidden'); display.classList.remove('hidden'); btn.textContent = "Stop";
+            sleepTimerId = setInterval(() => {
+                sleepRemaining--;
+                if (sleepRemaining <= 0) { audio.pause(); setSleepTimer(); }
+                else display.textContent = `${Math.floor(sleepRemaining/60)}:${(sleepRemaining%60).toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function setupMediaSession() {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.setActionHandler('play', () => audio.play());
+                navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+                navigator.mediaSession.setActionHandler('previoustrack', () => changeTrack(-1));
+                navigator.mediaSession.setActionHandler('nexttrack', () => changeTrack(1));
+            }
+        }
+
+        function updateMediaSession(song) {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: (song.name || song.title).replace(/&quot;/g, '"'),
+                    artist: song.artists?.primary?.[0]?.name || "Artist",
+                    artwork: [{ src: song.image[song.image.length - 1]?.url, sizes: '512x512', type: 'image/jpeg' }]
+                });
+                navigator.mediaSession.playbackState = 'playing';
+            }
+        }
+
+        audio.onplay = () => { document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-pause"></i>`; wasPlayingBeforeInterruption = true; };
+        audio.onpause = () => { document.getElementById('masterPlayBtn').innerHTML = `<i class="fas fa-play ml-0.5"></i>`; };
         audio.onended = () => changeTrack(1);
         audio.ontimeupdate = () => {
             if (isSeeking) return;
             document.getElementById('progressBar').value = (audio.currentTime / audio.duration) * 100 || 0;
-            document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
-            document.getElementById('durationTime').textContent = formatTime(audio.duration || 0);
+            document.getElementById('currentTime').textContent = `${Math.floor(audio.currentTime/60)}:${Math.floor(audio.currentTime%60).toString().padStart(2, '0')}`;
+            document.getElementById('durationTime').textContent = `${Math.floor(audio.duration/60 || 0)}:${Math.floor(audio.duration%60 || 0).toString().padStart(2, '0')}`;
         };
-
-        function seekAudio() { isSeeking = false; if (audio.duration) audio.currentTime = (document.getElementById('progressBar').value / 100) * audio.duration; }
-        function formatTime(s) { if (!s || isNaN(s)) return "0:00"; const m = Math.floor(s / 60); return `${m}:${Math.floor(s % 60).toString().padStart(2, '0')}`; }
-
-        // --- Sleep Timer ---
-        let sleepTimerId = null;
-        let sleepRemaining = 0;
-        function setSleepTimer() {
-            const input = document.getElementById('sleepMinutes');
-            const display = document.getElementById('sleepDisplay');
-            const btn = document.getElementById('sleepBtn');
-            if (sleepTimerId) {
-                clearInterval(sleepTimerId); sleepTimerId = null;
-                display.classList.add('hidden'); input.classList.remove('hidden');
-                btn.textContent = "Set"; return;
-            }
-            const mins = parseInt(input.value);
-            if (isNaN(mins) || mins <= 0) return;
-            sleepRemaining = mins * 60;
-            input.classList.add('hidden'); display.classList.remove('hidden');
-            btn.textContent = "Stop";
-            updateSleepDisplay();
-            sleepTimerId = setInterval(() => {
-                sleepRemaining--;
-                if (sleepRemaining <= 0) { audio.pause(); setSleepTimer(); }
-                else updateSleepDisplay();
-            }, 1000);
-        }
-        function updateSleepDisplay() {
-            const m = Math.floor(sleepRemaining / 60);
-            const s = sleepRemaining % 60;
-            document.getElementById('sleepDisplay').textContent = `${m}:${s.toString().padStart(2, '0')}`;
-        }
+        
+        function togglePlay() { audio.paused ? audio.play() : audio.pause(); }
+        function changeTrack(dir) { playSong(currentIndex + dir); }
+        function seekAudio() { isSeeking = false; audio.currentTime = (document.getElementById('progressBar').value / 100) * audio.duration; }
     </script>
 </body>
 </html>
